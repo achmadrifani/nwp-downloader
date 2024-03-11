@@ -26,6 +26,7 @@ def read_model_config(file):
     return cfg
 
 def main(CONFIG_DIR):
+    print("Reading configuration ...")
     cips_cfg = read_cips_config()
     cips = cips_cfg["CIPS1"]
     CIPS_HOST = cips["HOST"]
@@ -40,6 +41,7 @@ def main(CONFIG_DIR):
     STEPS = mdl_cfg.get("STEPS")
     STEPS = mdl_cfg.get("STEPS")
 
+    print("Checking initialization time ...")
     if INIT == 'latest':
         if 7 < datetime.utcnow().hour <= 18:
             init_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -49,6 +51,7 @@ def main(CONFIG_DIR):
             init_time = datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
 
     init_time = init_time.strftime('%Y%m%d%H%M%S')
+    print(f"Initialization time: {init_time}")
 
     # make steps range
     STEPS_HOLDER = []
@@ -60,10 +63,12 @@ def main(CONFIG_DIR):
 
     # check path
     print("Checking path ...")
-    path = f"D:/Projects/nwp_downloader/data/{MODEL}/{GRID}/{init_time}"
     path = f"{ROOT_DIR}/{DATA_REPOS}/{MODEL}/{GRID}/{init_time}"
     if not os.path.exists(path):
         os.makedirs(path)
+        print(f"Path {path} created.")
+    else:
+        print(f"Path {path} already exists.")
 
     # download data
     for param, param_info in PARAM_NAMES.items():
@@ -76,9 +81,14 @@ def main(CONFIG_DIR):
                 else:
                     url = f"http://{CIPS_HOST}/cal/moddb_access.php?user={CIPS_USER}&mode=web&dateRun={init_time}&model={MODEL}&grid={GRID}&subGrid=&range={step}&level={level}&paramAlias={param}&format=grib&output=binary"
                     print(f"Downloading {param} {level} {step} ...")
-                    response = requests.get(url, stream=True, allow_redirects=True)  # , auth=(CIPS_USER, CIPS_PASS))
-                    with open(grib_file, 'wb') as f:
-                        f.write(response.content)
+                    response = requests.get(url, stream=True, allow_redirects=True)
+                    if response.status_code != 200:
+                        print(f"Failed to download {param} {level} {step}.")
+                        continue
+                    else:
+                        with open(grib_file, 'wb') as f:
+                            f.write(response.content)
+                        print(f"{param} {level} {step} downloaded.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NWP Downloader")
@@ -87,6 +97,10 @@ if __name__ == "__main__":
 
     if args.config:
         CONFIG_DIR = args.config
-    main(CONFIG_DIR)
+        if not os.path.exists(CONFIG_DIR):
+            print("Configuration file does not exist.")
+            exit()
+        else:
+            main(CONFIG_DIR)
 
 

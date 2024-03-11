@@ -1,0 +1,22 @@
+INIT: latest
+MODEL: PWRFULL
+GRID: INDX0100
+PARAM_NAMES:
+  ACC_RAIN:
+    LEVELS: [0GRND]
+  T:
+    LEVELS: [2M]
+  U:
+    LEVELS: [10M]
+  V:
+    LEVELS: [10M]
+  RH:
+    LEVELS: [2M]
+  DEWPT_T:
+    LEVELS: [2M]
+  P:
+    LEVELS: [SEA]
+STEPS:
+  - STEP1: [0,120,1]
+
+
