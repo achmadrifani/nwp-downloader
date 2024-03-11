@@ -4,12 +4,13 @@ import yaml
 from datetime import datetime, timedelta
 import requests
 import os
+import argparse
 
 ROOT_DIR = "/home/metpublic"
 TASK_DIR = "PYTHON_SCRIPT/nwp_downloader"
 DATA_REPOS = f"DATA_REPOS"
 # CONFIG_DIR = f"{ROOT_DIR}/{TASK_DIR}/config"
-CONFIG_DIR = f"D:/Projects/nwp_downloader/config"
+# CONFIG_DIR = f"D:/Projects/nwp_downloader/config"
 
 
 def read_cips_config():
@@ -24,14 +25,14 @@ def read_model_config(file):
             cfg = yaml.safe_load(f)
     return cfg
 
-def main():
+def main(CONFIG_DIR):
     cips_cfg = read_cips_config()
     cips = cips_cfg["CIPS1"]
     CIPS_HOST = cips["HOST"]
     CIPS_USER = cips["USER"]
     CIPS_PASS = cips["PASS"]
 
-    mdl_cfg = read_model_config("PECMWFHF_CONFIG.yml")
+    mdl_cfg = read_model_config(CONFIG_DIR)
     INIT = mdl_cfg.get("INIT")
     MODEL = mdl_cfg.get("MODEL")
     GRID = mdl_cfg.get("GRID")
@@ -68,13 +69,24 @@ def main():
     for param, param_info in PARAM_NAMES.items():
         for level in param_info['LEVELS']:
             for step in STEPS_HOLDER:
-                url = f"http://{CIPS_HOST}/cal/moddb_access.php?user={CIPS_USER}&mode=web&dateRun={init_time}&model={MODEL}&grid={GRID}&subGrid=&range={step}&level={level}&paramAlias={param}&format=grib&output=binary"
-                print(f"Downloading {param} {level} {step} ...")
-                response = requests.get(url, stream=True, allow_redirects=True)  # , auth=(CIPS_USER, CIPS_PASS))
-                with open(f"{path}/{MODEL}.{GRID}.{init_time}.{param}.{level}.{step}.grib", 'wb') as f:
-                    f.write(response.content)
+                grib_file = f"{path}/{MODEL}.{GRID}.{init_time}.{param}.{level}.{step}.grib"
+                if os.path.isfile(grib_file):
+                    print(f"{param} {level} {step} already exists.")
+                    continue
+                else:
+                    url = f"http://{CIPS_HOST}/cal/moddb_access.php?user={CIPS_USER}&mode=web&dateRun={init_time}&model={MODEL}&grid={GRID}&subGrid=&range={step}&level={level}&paramAlias={param}&format=grib&output=binary"
+                    print(f"Downloading {param} {level} {step} ...")
+                    response = requests.get(url, stream=True, allow_redirects=True)  # , auth=(CIPS_USER, CIPS_PASS))
+                    with open(grib_file, 'wb') as f:
+                        f.write(response.content)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="NWP Downloader")
+    parser.add_argument("-c","--config", type=str, help="Path to Configuration file")
+    args = parser.parse_args()
+
+    if args.config:
+        CONFIG_DIR = args.config
+    main(CONFIG_DIR)
 
 
