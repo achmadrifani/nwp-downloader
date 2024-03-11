@@ -1,0 +1,24 @@
+INIT: latest
+MODEL: PECMWFHF
+GRID: SEA0125
+PARAM_NAMES:
+  ACC_RAIN:
+    LEVELS: [0GRND]
+  T:
+    LEVELS: [2M]
+  U:
+    LEVELS: [10M]
+  V:
+    LEVELS: [10M]
+  RH:
+    LEVELS: [2M]
+  DEWPT_T:
+    LEVELS: [2M]
+  P:
+    LEVELS: [SEA]
+STEPS:
+  - STEP1: [0,90,1]
+  - STEP2: [93,144,3]
+  - STEP3: [150,240,6]
+
+

@@ -1,0 +1,80 @@
+#!/home/metpublic/PYTHON_VENV/present_weather/bin/python
+
+import yaml
+from datetime import datetime, timedelta
+import requests
+import os
+
+ROOT_DIR = "/home/metpublic"
+TASK_DIR = "PYTHON_SCRIPT/nwp_downloader"
+DATA_REPOS = f"DATA_REPOS"
+# CONFIG_DIR = f"{ROOT_DIR}/{TASK_DIR}/config"
+CONFIG_DIR = f"D:/Projects/nwp_downloader/config"
+
+
+def read_cips_config():
+    file = f"{CONFIG_DIR}/CIPS_CONFIG.yml"
+    with open(file, 'r') as f:
+        cfg = yaml.safe_load(f)
+    return cfg
+
+def read_model_config(file):
+    config_file = f"{CONFIG_DIR}/{file}"
+    with open(config_file, 'r') as f:
+            cfg = yaml.safe_load(f)
+    return cfg
+
+def main():
+    cips_cfg = read_cips_config()
+    cips = cips_cfg["CIPS1"]
+    CIPS_HOST = cips["HOST"]
+    CIPS_USER = cips["USER"]
+    CIPS_PASS = cips["PASS"]
+
+    mdl_cfg = read_model_config("PECMWFHF_CONFIG.yml")
+    INIT = mdl_cfg.get("INIT")
+    MODEL = mdl_cfg.get("MODEL")
+    GRID = mdl_cfg.get("GRID")
+    PARAM_NAMES = mdl_cfg.get("PARAM_NAMES")
+    STEPS = mdl_cfg.get("STEPS")
+    STEPS = mdl_cfg.get("STEPS")
+
+    if INIT == 'latest':
+        if 7 < datetime.utcnow().hour <= 18:
+            init_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        elif datetime.utcnow().hour in [0, 1, 2, 3, 4, 5, 6, 7]:
+            init_time = (datetime.utcnow() - timedelta(days=1)).replace(hour=12, minute=0, second=0)
+        else:
+            init_time = datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
+
+    init_time = init_time.strftime('%Y%m%d%H%M%S')
+
+    # make steps range
+    STEPS_HOLDER = []
+    for STEP in STEPS:
+        for _, value in STEP.items():
+            start, stop, step_size = value
+            STEPS_HOLDER += list(range(start, stop + step_size, step_size))
+    print(STEPS_HOLDER)
+
+    # check path
+    print("Checking path ...")
+    path = f"D:/Projects/nwp_downloader/data/{MODEL}/{GRID}/{init_time}"
+    path = f"{ROOT_DIR}/{DATA_REPOS}/{MODEL}/{GRID}/{init_time}"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # download data
+    for param, param_info in PARAM_NAMES.items():
+        for level in param_info['LEVELS']:
+            for step in STEPS_HOLDER:
+                url = f"http://{CIPS_HOST}/cal/moddb_access.php?user={CIPS_USER}&mode=web&dateRun={init_time}&model={MODEL}&grid={GRID}&subGrid=&range={step}&level={level}&paramAlias={param}&format=grib&output=binary"
+                print(f"Downloading {param} {level} {step} ...")
+                response = requests.get(url, stream=True, allow_redirects=True)  # , auth=(CIPS_USER, CIPS_PASS))
+                with open(f"{path}/{MODEL}.{GRID}.{init_time}.{param}.{level}.{step}.grib", 'wb') as f:
+                    f.write(response.content)
+
+if __name__ == "__main__":
+    main()
+
+

@@ -1,0 +1,4 @@
+ROOT_DIR = "/home/metpublic"
+TASK_DIR = "PYTHON_SCRIPT/nwp_downloader"
+DATA_REPOS = f"DATA_REPOS"
+CONFIG_DIR = f"{ROOT_DIR}/{TASK_DIR}/config"
