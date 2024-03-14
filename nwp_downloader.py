@@ -12,7 +12,6 @@ ROOT_DIR = "/home/metpublic"
 TASK_DIR = "PYTHON_SCRIPT/nwp_downloader"
 DATA_REPOS = f"DATA_REPOS"
 
-
 # CONFIG_DIR = f"{ROOT_DIR}/{TASK_DIR}/config"
 # CONFIG_DIR = f"D:/Projects/nwp_downloader/config"
 
@@ -46,18 +45,6 @@ def main(CONFIG_DIR):
     PARAM_NAMES = mdl_cfg.get("PARAM_NAMES")
     STEPS = mdl_cfg.get("STEPS")
     STEPS = mdl_cfg.get("STEPS")
-
-    print("Checking initialization time ...")
-    if INIT == 'latest':
-        if 7 < datetime.utcnow().hour <= 18:
-            init_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        elif datetime.utcnow().hour in [0, 1, 2, 3, 4, 5, 6, 7]:
-            init_time = (datetime.utcnow() - timedelta(days=1)).replace(hour=12, minute=0, second=0)
-        else:
-            init_time = datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
-
-    init_time = init_time.strftime('%Y%m%d%H%M%S')
-    print(f"Initialization time: {init_time}")
 
     # make steps range
     STEPS_HOLDER = []
@@ -123,7 +110,21 @@ def main(CONFIG_DIR):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NWP Downloader")
     parser.add_argument("-c", "--config", type=str, help="Path to Configuration file")
+    parser.add_argument("-i","--init",type=int, help="Initial time (latest or YYYYMMDDHHMMSS)")
     args = parser.parse_args()
+
+    if args.init == 'latest':
+        print("Checking initialization time ...")
+        if 7 < datetime.utcnow().hour <= 18:
+            init_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        elif datetime.utcnow().hour in [0, 1, 2, 3, 4, 5, 6, 7]:
+            init_time = (datetime.utcnow() - timedelta(days=1)).replace(hour=12, minute=0, second=0)
+        else:
+            init_time = datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
+        init_time = init_time.strftime('%Y%m%d%H%M%S')
+    else:
+        init_time = args.init
+    print(f"Initialization time: {init_time}")
 
     if args.config:
         CONFIG_DIR = args.config
